@@ -39,17 +39,13 @@ public class RegisterService implements CommandLineRunner {
     public void run(String... args) throws Exception {
 //        enterpriseService.deleteAll();
         InetAddress inetAddress = InetAddress.getLocalHost();
-        String url = inetAddress.getHostAddress() + ":" + environment.getProperty("local.server.port");
+        String url = "http://" + inetAddress.getHostAddress() + ":" + environment.getProperty("local.server.port");
         enterprise.setRestRootUrl(url);
         System.out.println(enterprise.toString());
         enterpriseRepository.deleteAllRelationship();
         enterpriseService.deleteOlderVersionByUrl(url);
         enterpriseService.save(enterprise);
         logger.info("register this enterprise successfully");
-
-        enterpriseRepository.createRelationship(url,"5");
-        enterpriseRepository.setRelationshipOrderId(url,"5","123");
-        enterpriseRepository.deleteRelationshipWithOrderId(url,"5","123");
 
 
 //        Set<Enterprise> es = enterpriseRepository.findEnterprisesByRoleEqualsOrderByCapability("ha");

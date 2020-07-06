@@ -11,7 +11,12 @@ import java.util.Set;
 public interface EnterpriseRepository extends Neo4jRepository<Enterprise, Long> {
 
     @Transactional
-    Set<Enterprise> findAllByRoleEqualsOrderByCapability(@Param("role") String role);
+    @Query("match (e:Enterprise{restRootUrl: $myUrl})-[c:cooperate]-> (s:Enterprise) return s")
+    Set<Enterprise> getLaterCooperators(@Param("myUrl")String myUrl);
+
+    @Transactional
+    @Query("match (e:Enterprise)-[c:cooperate]-> (s:Enterprise {restRootUrl: $myUrl}) return e")
+    Set<Enterprise> getFormerCooperators(@Param("myUrl")String myUrl);
 
     @Transactional
     @Query("match (e:Enterprise{restRootUrl: $myUrl})-[c:cooperate]->(s:Enterprise{restRootUrl: $itsUrl}) set c.orderId= $orderId return e")

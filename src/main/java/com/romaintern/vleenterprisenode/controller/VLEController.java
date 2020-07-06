@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -45,14 +47,19 @@ public class VLEController {
      */
     @GetMapping(value = "buildConnection")
     public String buildConnection(@RequestParam String direction, @RequestParam long needs, @RequestParam String orderId) {
+        StringBuffer sb = new StringBuffer();
+
+        Map<String,Object> urlVariables = new HashMap<>();
+        urlVariables.put("needs",needs);
+        urlVariables.put("orderId",orderId);
 
         CommonUtil commonUtil = new CommonUtil();
         long needsTmp = needs;
         //start to build former connection
         boolean gotFormer = false, gotLater = false;
         if (direction.equals("forward") || direction.equals("bilateral")) {
-            if (enterprise.getFormerRole().isEmpty() && direction.equals("forward")) {
-                return direction + " success";
+            if (enterprise.getFormerRole().equals("/") && direction.equals("forward")) {
+                return  "success "+ direction;
             }
             Set<Enterprise> formerActors = enterpriseService.getFormerActors(enterprise.getFormerRole());
             gotFormer = commonUtil.sumCapabilityIsEnough(formerActors, needs);
@@ -77,8 +84,17 @@ public class VLEController {
                 formerActors.stream().forEach(e -> {
                     enterpriseRepository.setRelationshipOrderId(e.getRestRootUrl(), enterprise.getRestRootUrl(), orderId);
                 });
+
+                //get response  of former cooperators
+                Set<Enterprise> formerCooperators = enterpriseService.getFormerCooperators(enterprise.getRestRootUrl());
+                Iterator fcIterator = formerCooperators.iterator();
+                while (fcIterator.hasNext()){
+                    Enterprise tmp = (Enterprise)fcIterator.next();
+                    String url = tmp.getRestRootUrl()+"/rest/VLE/buildConnection?direction=forward&needs={needs}&orderId={orderId}";
+                    sb.append(restTemplate.getForEntity(url,String.class,urlVariables));
+                }
                 if (direction.equals("forward")) {
-                    return "succeed, " + enterprise.getName() + "connected the former actors successfully";
+                    return sb.toString();
                 }
             } else {
                 return "failed, because the former actors of " + enterprise.getName() + " cannot satisfy the needs";
@@ -87,8 +103,8 @@ public class VLEController {
         needsTmp = needs;
         //start to build later connection
         if (direction.equals("backward") || direction.equals("bilateral")) {
-            if (enterprise.getLaterRole().isEmpty() && direction.equals("backward")) {
-                return direction + " success";
+            if (enterprise.getLaterRole().equals("/") && direction.equals("backward")) {
+                return "success "+ direction;
             }
             Set<Enterprise> laterActors = enterpriseService.getLaterActors(enterprise.getLaterRole());
             gotLater = commonUtil.sumCapabilityIsEnough(laterActors, needs);
@@ -113,15 +129,24 @@ public class VLEController {
                 laterActors.stream().forEach(e -> {
                     enterpriseRepository.setRelationshipOrderId(enterprise.getRestRootUrl(), e.getRestRootUrl(), orderId);
                 });
+
+                //get response of later cooperators
+                Set<Enterprise> laterCooperators = enterpriseService.getLaterCooperators(enterprise.getRestRootUrl());
+                Iterator fcIterator = laterCooperators.iterator();
+                while (fcIterator.hasNext()){
+                    Enterprise tmp = (Enterprise)fcIterator.next();
+                    String url = tmp.getRestRootUrl()+"/rest/VLE/buildConnection?direction=backward&needs={needs}&orderId={orderId}";
+                    sb.append(restTemplate.getForEntity(url,String.class,urlVariables));
+                }
                 if (direction.equals("backward")) {
-                    return "succeed, " + enterprise.getName() + "connected the later actors successfully";
+                    return sb.toString();
                 }
             } else {
                 return "failed, because the later actors of " + enterprise.getName() + " cannot satisfy the needs";
             }
         }
 
-        return direction + " succeed";
+        return sb.toString();
     }
 
 }

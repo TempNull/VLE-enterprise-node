@@ -25,13 +25,19 @@ public class EnterpriseService {
     }
 
     public Set<Enterprise> getFormerActors(String formerRole) {
-//       return enterpriseRepository.findAllByRoleEqualsOrderByCapability(formerRole);
         return enterpriseRepository.findEnterprisesByRoleEqualsOrderByCapability(formerRole);
     }
 
-
     public Set<Enterprise> getLaterActors(String laterRole) {
         return enterpriseRepository.findEnterprisesByRoleEqualsOrderByCapability(laterRole);
+    }
+
+    public Set<Enterprise> getLaterCooperators(String myUrl){
+        return enterpriseRepository.getLaterCooperators(myUrl);
+    }
+
+    public Set<Enterprise> getFormerCooperators(String myUrl){
+        return enterpriseRepository.getFormerCooperators(myUrl);
     }
 
     public void saveAll(Set<Enterprise> enterprises){
